@@ -46,11 +46,11 @@ cruise:
 """
 
 LOGGER_TEMPLATE = """  ########
-  %LOGGER%->off:
-    name: %LOGGER%->off
+  %LOGGER%-off:
+    name: %LOGGER%-off
 
-  %LOGGER%->net:
-    name: %LOGGER%->net
+  %LOGGER%-net:
+    name: %LOGGER%-net
     readers:                    # Read from serial port
     - class: SerialReader
       kwargs:
@@ -67,8 +67,8 @@ LOGGER_TEMPLATE = """  ########
         port: %RAW_UDP_PORT%
         destination: %UDP_DESTINATION%
 
-  %LOGGER%->net/file:
-    name: %LOGGER%->net/file
+  %LOGGER%-net+file:
+    name: %LOGGER%-net+file
     readers:                    # Read from serial port
     - class: SerialReader
       kwargs:
@@ -95,11 +95,11 @@ LOGGER_TEMPLATE = """  ########
 
 # Read raw records from UDP, parse them and distribute to CDS and InfluxDB
 NET_READER_TEMPLATE = """  ########
-  net_reader->off:
-    name: net_reader->off
+  net_reader-off:
+    name: net_reader-off
 
-  net_reader->on:
-    name: net_reader->on
+  net_reader-on:
+    name: net_reader-on
     readers:                    # Read from simulated serial port
     - class: UDPReader
       kwargs:
@@ -114,8 +114,8 @@ NET_READER_TEMPLATE = """  ########
       kwargs:
         data_server: %DATA_SERVER%
 
-  net_reader->on+influx:
-    name: net_reader->on+influx
+  net_reader-on+influx:
+    name: net_reader-on+influx
     readers:                    # Read from simulated serial port
     - class: UDPReader
       kwargs:
@@ -135,11 +135,11 @@ NET_READER_TEMPLATE = """  ########
 """
 
 TRUE_WIND_TEMPLATE = """  ########
-  true_wind->off:
-    name: true_wind->off
+  true_wind-off:
+    name: true_wind-off
 
-  true_wind->on:
-    name: true_wind->on
+  true_wind-on:
+    name: true_wind-on
     readers:
     - class: CachedDataReader
       kwargs:
@@ -216,8 +216,8 @@ TRUE_WIND_TEMPLATE = """  ########
           kwargs:
             data_server: %DATA_SERVER%
 
-  true_wind->on+influx:
-    name: true_wind->on+influx
+  true_wind-on+influx:
+    name: true_wind-on+influx
     readers:
     - class: CachedDataReader
       kwargs:
@@ -305,11 +305,11 @@ TRUE_WIND_TEMPLATE = """  ########
 """
 SNAPSHOT_TEMPLATE = """  ########
   # Derived data subsampling logger
-  snapshot->off:
-    name: snapshot->off
+  snapshot-off:
+    name: snapshot-off
 
-  snapshot->on:
-    name: snapshot->on
+  snapshot-on:
+    name: snapshot-on
     readers:
     - class: CachedDataReader
       kwargs:
@@ -399,8 +399,8 @@ SNAPSHOT_TEMPLATE = """  ########
       kwargs:
         data_server: %DATA_SERVER%
 
-  snapshot->on+influx:
-    name: snapshot->on+influx
+  snapshot-on+influx:
+    name: snapshot-on+influx
     readers:
     - class: CachedDataReader
       kwargs:
@@ -553,30 +553,30 @@ loggers:
 
 LOGGER_DEF = """  %LOGGER%:
     configs:
-    - %LOGGER%->off
-    - %LOGGER%->net
-    - %LOGGER%->net/file
+    - %LOGGER%-off
+    - %LOGGER%-net
+    - %LOGGER%-net+file
 """
 for logger in loggers:
   output += fill_substitutions(LOGGER_DEF, substitutions).replace('%LOGGER%', logger)
 
 output += """  net_reader:
     configs:
-    - net_reader->off
-    - net_reader->on
-    - net_reader->on+influx
+    - net_reader-off
+    - net_reader-on
+    - net_reader-on+influx
 """
 output += """  true_wind:
     configs:
-    - true_wind->off
-    - true_wind->on
-    - true_wind->on+influx
+    - true_wind-off
+    - true_wind-on
+    - true_wind-on+influx
 """
 output += """  snapshot:
     configs:
-    - snapshot->off
-    - snapshot->on
-    - snapshot->on+influx
+    - snapshot-off
+    - snapshot-on
+    - snapshot-on+influx
 """
 
 ################################################################################
@@ -587,50 +587,50 @@ modes:
   'off':
 """
 for logger in loggers:
-  output += '    %LOGGER%: %LOGGER%->off\n'.replace('%LOGGER%', logger)
-output += '    net_reader: net_reader->off\n'
-output += '    true_wind: true_wind->off\n'
-output += '    snapshot: snapshot->off\n'
+  output += '    %LOGGER%: %LOGGER%-off\n'.replace('%LOGGER%', logger)
+output += '    net_reader: net_reader-off\n'
+output += '    true_wind: true_wind-off\n'
+output += '    snapshot: snapshot-off\n'
 
 #### no_write
 output += """
   no_write:
 """
 for logger in loggers:
-  output += '    %LOGGER%: %LOGGER%->net\n'.replace('%LOGGER%', logger)
-output += '    net_reader: net_reader->on\n'
-output += '    true_wind: true_wind->on\n'
-output += '    snapshot: snapshot->on\n'
+  output += '    %LOGGER%: %LOGGER%-net\n'.replace('%LOGGER%', logger)
+output += '    net_reader: net_reader-on\n'
+output += '    true_wind: true_wind-on\n'
+output += '    snapshot: snapshot-on\n'
 
 #### no_write+influx
 output += """
   no_write+influx:
 """
 for logger in loggers:
-  output += '    %LOGGER%: %LOGGER%->net\n'.replace('%LOGGER%', logger)
-output += '    net_reader: net_reader->on+influx\n'
-output += '    true_wind: true_wind->on+influx\n'
-output += '    snapshot: snapshot->on+influx\n'
+  output += '    %LOGGER%: %LOGGER%-net\n'.replace('%LOGGER%', logger)
+output += '    net_reader: net_reader-on+influx\n'
+output += '    true_wind: true_wind-on+influx\n'
+output += '    snapshot: snapshot-on+influx\n'
 
 #### write
 output += """
   write:
 """
 for logger in loggers:
-  output += '    %LOGGER%: %LOGGER%->net/file\n'.replace('%LOGGER%', logger)
-output += '    net_reader: net_reader->on\n'
-output += '    true_wind: true_wind->on\n'
-output += '    snapshot: snapshot->on\n'
+  output += '    %LOGGER%: %LOGGER%-net+file\n'.replace('%LOGGER%', logger)
+output += '    net_reader: net_reader-on\n'
+output += '    true_wind: true_wind-on\n'
+output += '    snapshot: snapshot-on\n'
 
 #### write+influx
 output += """
   write+influx:
 """
 for logger in loggers:
-  output += '    %LOGGER%: %LOGGER%->net/file\n'.replace('%LOGGER%', logger)
-output += '    net_reader: net_reader->on+influx\n'
-output += '    true_wind: true_wind->on+influx\n'
-output += '    snapshot: snapshot->on+influx\n'
+  output += '    %LOGGER%: %LOGGER%-net+file\n'.replace('%LOGGER%', logger)
+output += '    net_reader: net_reader-on+influx\n'
+output += '    true_wind: true_wind-on+influx\n'
+output += '    snapshot: snapshot-on+influx\n'
 
 output += """
 ########################################

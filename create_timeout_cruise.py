@@ -38,11 +38,11 @@ cruise:
 """
 
 TRUE_WIND_TEMPLATE = """
-  true_wind->off:
-    name: true_wind->off
+  true_wind-off:
+    name: true_wind-off
 
-  true_wind->on:
-    name: true_wind->on
+  true_wind-on:
+    name: true_wind-on
     readers:
       class: CachedDataReader
       kwargs:
@@ -110,13 +110,13 @@ TRUE_WIND_TEMPLATE = """
 
 
 OFF_TEMPLATE = """
-  %LOGGER%->off:
-    name: %LOGGER%->off
+  %LOGGER%-off:
+    name: %LOGGER%-off
 """
 
 NET_WRITER_TEMPLATE = """
-  %LOGGER%->net:
-    name: %LOGGER%->net
+  %LOGGER%-net:
+    name: %LOGGER%-net
     readers:                    # Read from simulated serial port
       class: SerialReader
       kwargs:
@@ -145,8 +145,8 @@ NET_WRITER_TEMPLATE = """
 """
 
 FILE_NET_WRITER_TEMPLATE = """
-  %LOGGER%->file/net:
-    name: %LOGGER%->file/net
+  %LOGGER%-file+net:
+    name: %LOGGER%-file+net
     readers:                    # Read from simulated serial port
       class: SerialReader
       kwargs:
@@ -185,8 +185,8 @@ FILE_NET_WRITER_TEMPLATE = """
 """
 
 FULL_WRITER_TEMPLATE = """
-  %LOGGER%->file/net/db:
-    name: %LOGGER%->file/net/db
+  %LOGGER%-file+net+db:
+    name: %LOGGER%-file+net+db
     readers:                    # Read from simulated serial port
       class: SerialReader
       kwargs:
@@ -236,11 +236,11 @@ FULL_WRITER_TEMPLATE = """
 """
 
 NET_TIMEOUT_TEMPLATE = """
-  timeout_check->off:
-    name: timeout_check->off
+  timeout_check-off:
+    name: timeout_check-off
 
-  timeout_check->on:
-    name: timeout_check->on
+  timeout_check-on:
+    name: timeout_check-on
     readers:                   # Read from raw UDP
     - class: UDPReader
       kwargs:
@@ -348,22 +348,22 @@ loggers:
 
 LOGGER_DEF = """  %LOGGER%:
     configs:
-    - %LOGGER%->off
-    - %LOGGER%->net
-    - %LOGGER%->file/net
-    - %LOGGER%->file/net/db
+    - %LOGGER%-off
+    - %LOGGER%-net
+    - %LOGGER%-file+net
+    - %LOGGER%-file+net+db
 """
 for logger in loggers:
     output += fill_substitutions(LOGGER_DEF, substitutions).replace('%LOGGER%', logger)
 output += """  true_wind:
     configs:
-    - true_wind->off
-    - true_wind->on
+    - true_wind-off
+    - true_wind-on
 """
 output += """  timeout_check:
     configs:
-    - timeout_check->off
-    - timeout_check->on
+    - timeout_check-off
+    - timeout_check-on
 """
 
 ################################################################################
@@ -374,36 +374,36 @@ modes:
   'off':
 """
 for logger in loggers:
-    output += '    %LOGGER%: %LOGGER%->off\n'.replace('%LOGGER%', logger)
-output += '    true_wind: true_wind->off\n'
-output += '    timeout_check: timeout_check->off\n'
+    output += '    %LOGGER%: %LOGGER%-off\n'.replace('%LOGGER%', logger)
+output += '    true_wind: true_wind-off\n'
+output += '    timeout_check: timeout_check-off\n'
 
 # monitor
 output += """
   monitor:
 """
 for logger in loggers:
-    output += '    %LOGGER%: %LOGGER%->net\n'.replace('%LOGGER%', logger)
-output += '    true_wind: true_wind->on\n'
-output += '    timeout_check: timeout_check->on\n'
+    output += '    %LOGGER%: %LOGGER%-net\n'.replace('%LOGGER%', logger)
+output += '    true_wind: true_wind-on\n'
+output += '    timeout_check: timeout_check-on\n'
 
 # log
 output += """
   log:
 """
 for logger in loggers:
-    output += '    %LOGGER%: %LOGGER%->file/net\n'.replace('%LOGGER%', logger)
-output += '    true_wind: true_wind->on\n'
-output += '    timeout_check: timeout_check->on\n'
+    output += '    %LOGGER%: %LOGGER%-file+net\n'.replace('%LOGGER%', logger)
+output += '    true_wind: true_wind-on\n'
+output += '    timeout_check: timeout_check-on\n'
 
 # log+db
 output += """
   'log+db':
 """
 for logger in loggers:
-    output += '    %LOGGER%: %LOGGER%->file/net/db\n'.replace('%LOGGER%', logger)
-output += '    true_wind: true_wind->on\n'
-output += '    timeout_check: timeout_check->on\n'
+    output += '    %LOGGER%: %LOGGER%-file+net+db\n'.replace('%LOGGER%', logger)
+output += '    true_wind: true_wind-on\n'
+output += '    timeout_check: timeout_check-on\n'
 
 output += """
 ########################################
