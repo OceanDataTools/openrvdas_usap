@@ -110,7 +110,28 @@ loggers:
   # true winds and write back to CDS and optionally InfluxDB
   true_winds:
     logger_template: true_winds_logger_template
+    variables:
+      # Where to find the inputs
+      course_true: S330CourseTrue
+      heading_true: S330HeadingTrue
+      speed_over_ground: S330SpeedKt
+      port_rel_wind_dir: MwxPortRelWindDir
+      port_rel_wind_speed: MwxPortRelWindSpeed
+      stbd_rel_wind_dir: MwxStbdRelWindDir
+      stbd_rel_wind_speed: MwxStbdRelWindSpeed      
 
+      # Knots -> meters/sec
+      convert_speed_factor: 0.5144
+      max_field_age: 15
+
+      # What to call the outputs
+      port_apparent_dir_name: PortApparentWindDir
+      port_true_dir_name: PortTrueWindDir
+      port_true_speed_name: PortTrueWindSpeed
+      stbd_apparent_dir_name: StbdApparentWindDir
+      stbd_true_dir_name: StbdTrueWindDir
+      stbd_true_speed_name: StbdTrueWindSpeed
+            
   # Read a bunch of variables from CDS, compute 30-second snapshot and write back
   # to CDS and optionally InfluxDB. This *totally* needs a way to be generalized!!!
   snapshot:
@@ -137,10 +158,20 @@ modes:
 
   #### no_write
   modes_section += """
-  no_write:
+  no_write: &no_write
 """
   for logger in loggers:
     modes_section += f'    {logger}: {logger}-net\n'
+  modes_section += '    parse_data: parse_data-on\n'
+  modes_section += '    true_winds: true_winds-on\n'
+  modes_section += '    snapshot: snapshot-on\n'
+
+  #### write
+  modes_section += """
+  write: &write
+"""
+  for logger in loggers:
+    modes_section += f'    {logger}: {logger}-net+file\n'
   modes_section += '    parse_data: parse_data-on\n'
   modes_section += '    true_winds: true_winds-on\n'
   modes_section += '    snapshot: snapshot-on\n'
@@ -148,34 +179,17 @@ modes:
   #### no_write+influx
   modes_section += """
   no_write+influx:
-"""
-  for logger in loggers:
-    modes_section += f'    {logger}: {logger}-net\n'
-  modes_section += '    parse_data: parse_data-on+influx\n'
-  modes_section += '    true_winds: true_winds-on+influx\n'
-  modes_section += '    snapshot: snapshot-on+influx\n'
+    <<: *no_write
+    parse_data: parse_data-on+influx
+    true_winds: true_winds-on+influx
+    snapshot: snapshot-on+influx
 
-  #### write
-  modes_section += """
-  write:
-"""
-  for logger in loggers:
-    modes_section += f'    {logger}: {logger}-net+file\n'
-  modes_section += '    parse_data: parse_data-on\n'
-  modes_section += '    true_winds: true_winds-on\n'
-  modes_section += '    snapshot: snapshot-on\n'
-
-  #### write+influx
-  modes_section += """
   write+influx:
-"""
-  for logger in loggers:
-    modes_section += f'    {logger}: {logger}-net+file\n'
-  modes_section += '    parse_data: parse_data-on+influx\n'
-  modes_section += '    true_winds: true_winds-on+influx\n'
-  modes_section += '    snapshot: snapshot-on+influx\n'
+    <<: *write
+    parse_data: parse_data-on+influx
+    true_winds: true_winds-on+influx
+    snapshot: snapshot-on+influx
 
-  modes_section += """
 ###########################################################
 default_mode: 'off'
 """
