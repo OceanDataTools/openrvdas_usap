@@ -23,6 +23,7 @@ There is no timeout checking of any loggers.
 import argparse
 import getpass
 import logging
+import pprint
 import sys
 import time
 import yaml
@@ -47,7 +48,6 @@ cruise:
 ###########################################################
 includes:
   - local/logger_templates/serial_logger_template.yaml
-  - local/logger_templates/udp_logger_template.yaml
   - local/logger_templates/parse_data_logger_template.yaml
   - local/logger_templates/true_winds_logger_template.yaml
   - local/logger_templates/snapshot_logger_template.yaml
@@ -108,35 +108,51 @@ loggers:
     
   # Read course, heading, SOG and relative winds from CDS, compute
   # true winds and write back to CDS and optionally InfluxDB
-  true_winds:
+  true_winds_port:
     logger_template: true_winds_logger_template
     variables:
       # Where to find the inputs
       course_true: S330CourseTrue
       heading_true: S330HeadingTrue
       speed_over_ground: S330SpeedKt
-      port_rel_wind_dir: MwxPortRelWindDir
-      port_rel_wind_speed: MwxPortRelWindSpeed
-      stbd_rel_wind_dir: MwxStbdRelWindDir
-      stbd_rel_wind_speed: MwxStbdRelWindSpeed      
+      rel_wind_dir: MwxPortRelWindDir
+      rel_wind_speed: MwxPortRelWindSpeed
 
       # Knots -> meters/sec
       convert_speed_factor: 0.5144
       max_field_age: 15
 
       # What to call the outputs
-      port_apparent_dir_name: PortApparentWindDir
-      port_true_dir_name: PortTrueWindDir
-      port_true_speed_name: PortTrueWindSpeed
-      stbd_apparent_dir_name: StbdApparentWindDir
-      stbd_true_dir_name: StbdTrueWindDir
-      stbd_true_speed_name: StbdTrueWindSpeed
+      apparent_dir_name: PortApparentWindDir
+      true_dir_name: PortTrueWindDir
+      true_speed_name: PortTrueWindSpeed
+
+  true_winds_stbd:
+    logger_template: true_winds_logger_template
+    variables:
+      # Where to find the inputs
+      course_true: S330CourseTrue
+      heading_true: S330HeadingTrue
+      speed_over_ground: S330SpeedKt
+      rel_wind_dir: MwxStbdRelWindDir
+      rel_wind_speed: MwxStbdRelWindSpeed     
+
+      # Knots -> meters/sec
+      convert_speed_factor: 0.5144
+      max_field_age: 15
+
+      # What to call the outputs
+      apparent_dir_name: StbdApparentWindDir
+      true_dir_name: StbdTrueWindDir
+      true_speed_name: StbdTrueWindSpeed
             
   # Read a bunch of variables from CDS, compute 30-second snapshot and write back
   # to CDS and optionally InfluxDB. This *totally* needs a way to be generalized!!!
   snapshot:
     logger_template: snapshot_logger_template
     variables:
+      snapshot_fields: [MwxAirTemp, RTMPTemp, PortTrueWindDir, PortTrueWindSpeed, StbdTrueWindDir,
+                        StbdTrueWindSpeed, MwxBarometer, KnudDepthHF, KnudDepthLF, Grv1Value]
       interval: 30
       window: 30
 """
@@ -145,50 +161,41 @@ loggers:
 ################################################################################
 def create_modes_section(port_def):
   loggers = port_def.get('ports').keys()
+  derived_loggers = ['parse_data', 'true_winds_port', 'true_winds_stbd', 'snapshot']
+
+  off_configs = ', '.join([f'{logger}-off' for logger in loggers]) + ', '
+  off_configs += ', '.join([f'{logger}-off' for logger in derived_loggers])
+
+  no_write_configs = ', '.join([f'{logger}-net' for logger in loggers]) + ', '
+  no_write_configs += ', '.join([f'{logger}-on' for logger in derived_loggers])
+
+  write_configs = ', '.join([f'{logger}-net+file' for logger in loggers]) + ', '
+  write_configs += ', '.join([f'{logger}-on' for logger in derived_loggers])
+
+  no_write_influx_configs = ', '.join([f'{logger}-net' for logger in loggers]) + ', '
+  no_write_influx_configs += ', '.join([f'{logger}-on+influx' for logger in derived_loggers])
+
+  write_influx_configs = ', '.join([f'{logger}-net+file' for logger in loggers]) + ', '
+  write_influx_configs += ', '.join([f'{logger}-on+influx' for logger in derived_loggers])
+
+
   modes_section = f"""
 ###########################################################
 modes:
   'off':
-"""
-  for logger in loggers:
-    modes_section += f'    {logger}: {logger}-off\n'
-  modes_section += '    parse_data: parse_data-off\n'
-  modes_section += '    true_winds: true_winds-off\n'
-  modes_section += '    snapshot: snapshot-off\n'
+    [{str(off_configs)}]
+    
+  no_write:
+    [{str(no_write_configs)}]
 
-  #### no_write
-  modes_section += """
-  no_write: &no_write
-"""
-  for logger in loggers:
-    modes_section += f'    {logger}: {logger}-net\n'
-  modes_section += '    parse_data: parse_data-on\n'
-  modes_section += '    true_winds: true_winds-on\n'
-  modes_section += '    snapshot: snapshot-on\n'
-
-  #### write
-  modes_section += """
-  write: &write
-"""
-  for logger in loggers:
-    modes_section += f'    {logger}: {logger}-net+file\n'
-  modes_section += '    parse_data: parse_data-on\n'
-  modes_section += '    true_winds: true_winds-on\n'
-  modes_section += '    snapshot: snapshot-on\n'
-
-  #### no_write+influx
-  modes_section += """
+  write:
+    [{str(write_configs)}]
+    
   no_write+influx:
-    <<: *no_write
-    parse_data: parse_data-on+influx
-    true_winds: true_winds-on+influx
-    snapshot: snapshot-on+influx
+    [{str(no_write_influx_configs)}]
 
   write+influx:
-    <<: *write
-    parse_data: parse_data-on+influx
-    true_winds: true_winds-on+influx
-    snapshot: snapshot-on+influx
+    [{str(write_influx_configs)}]
 
 ###########################################################
 default_mode: 'off'
